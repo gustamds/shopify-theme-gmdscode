@@ -1,0 +1,56 @@
+<section id="shopify-section-{{ section.id }}" class="color-{{ section.settings.color_scheme }} gradient">
+  <div class="page-width">
+    <div class="section--cta">
+      <h2 class="h2">{{ section.settings.pre_order_title }}</h2>
+      <p>
+        The new {{ collection.title }} is out now!
+        {{ section.settings.pre_order_text }}
+      </p>
+    </div>
+  </div>
+
+  {%- style -%}
+    #shopify-section-{{ section.id }} {
+      padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+      padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+    }
+    @media screen and (min-width: 750px) {
+      #shopify-section-{{ section.id }} {
+        padding-top: {{ section.settings.padding_top }}px;
+        padding-bottom: {{ section.settings.padding_bottom }}px;
+      }
+    }
+  {%- endstyle -%}
+</section>
+
+{% schema %}
+{
+  "name": "Call to action",
+  "settings": [
+    { "id": "pre_order_title", "type": "text", "label": "Title", "default": "Pre-order now!" },
+    { "id": "pre_order_text", "type": "textarea", "label": "Text", "default": "Enter text here" },
+    { "type": "color_scheme", "id": "color_scheme", "label": "Color scheme", "default": "scheme-1" },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Padding top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 36
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Padding bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 36
+    }
+  ],
+  "presets": [{ "name": "Call to Action", "category": "Promotional" }]
+}
+{% endschema %}

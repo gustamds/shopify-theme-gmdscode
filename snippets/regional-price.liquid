@@ -1,0 +1,147 @@
+{% comment %}
+  Regional Price Selector
+  Exibe preços baseados no CEP do cliente
+{% endcomment %}
+
+<div id="regional-price-container" class="regional-price" style="margin: 16px 0; padding: 16px; border: 1px solid #e5e5e5; border-radius: 8px;">
+  <div class="regional-price__input-group" style="display: flex; gap: 8px; margin-bottom: 12px;">
+    <input 
+      type="text" 
+      id="cep-input" 
+      placeholder="Digite seu CEP" 
+      maxlength="9"
+      style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;"
+    >
+    <button 
+      type="button" 
+      id="cep-button"
+      style="padding: 10px 20px; background: #000; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;"
+    >
+      Verificar
+    </button>
+  </div>
+  
+  <div id="regional-price-result" style="display: none;">
+    <p id="regional-price-location" style="margin: 0 0 4px 0; font-size: 12px; color: #666;"></p>
+    <p id="regional-price-value" style="margin: 0; font-size: 24px; font-weight: bold; color: #000;"></p>
+  </div>
+  
+  <p id="regional-price-error" style="display: none; margin: 0; color: #c00; font-size: 14px;"></p>
+</div>
+
+{% assign config_regioes = shop.metafields.custom.configuracao_de_regioes.value %}
+{% assign product_prices = product.metafields.custom.precos_regionais.value %}
+
+<script>
+  // Dados carregados diretamente do Liquid
+  window.regionalPriceData = {
+    locations: {{ config_regioes.regioes | json }},
+    productPrices: {{ product_prices | json }},
+    defaultPrice: {{ product.price | divided_by: 100.0 }},
+    currency: "R$"
+  };
+  
+  console.log('Regional Price Data:', window.regionalPriceData);
+</script>
+
+<script>
+(function() {
+  const data = window.regionalPriceData;
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('cep-input');
+    const button = document.getElementById('cep-button');
+    
+    if (!input || !button) {
+      console.error('Elementos não encontrados');
+      return;
+    }
+    
+    // Formata CEP ao digitar
+    input.addEventListener('input', function(e) {
+      const numbers = e.target.value.replace(/\D/g, '');
+      if (numbers.length <= 5) {
+        e.target.value = numbers;
+      } else {
+        e.target.value = numbers.slice(0, 5) + '-' + numbers.slice(5, 8);
+      }
+    });
+    
+    // Busca preço ao clicar
+    button.addEventListener('click', function() {
+      const cep = input.value;
+      const cleanCEP = cep.replace(/\D/g, '');
+      
+      if (cleanCEP.length !== 8) {
+        document.getElementById('regional-price-error').textContent = 'Digite um CEP válido (8 dígitos)';
+        document.getElementById('regional-price-error').style.display = 'block';
+        document.getElementById('regional-price-result').style.display = 'none';
+        return;
+      }
+      
+      const cepNumber = parseInt(cleanCEP);
+      let foundLocation = null;
+      
+      // Busca em qual região o CEP se encaixa
+      if (data.locations && Array.isArray(data.locations)) {
+        for (const location of data.locations) {
+          if (!location.faixas_cep) continue;
+          
+          for (const range of location.faixas_cep) {
+            const [start, end] = range.split('-').map(r => parseInt(r));
+            if (cepNumber >= start && cepNumber <= end) {
+              foundLocation = location.nome;
+              break;
+            }
+          }
+          if (foundLocation) break;
+        }
+      }
+      
+      // Atualiza UI
+      const resultEl = document.getElementById('regional-price-result');
+      const locationEl = document.getElementById('regional-price-location');
+      const priceEl = document.getElementById('regional-price-value');
+      const errorEl = document.getElementById('regional-price-error');
+      
+      if (!foundLocation) {
+        resultEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        errorEl.textContent = 'CEP não atendido. Verifique o CEP digitado.';
+        return;
+      }
+      
+      // Busca o preço para a região
+      const regionalPrice = data.productPrices ? data.productPrices[foundLocation] : null;
+      
+      if (regionalPrice && regionalPrice.price) {
+        errorEl.style.display = 'none';
+        resultEl.style.display = 'block';
+        locationEl.textContent = 'Preço para: ' + foundLocation;
+        priceEl.textContent = 'R$ ' + regionalPrice.price.toFixed(2).replace('.', ',');
+        
+        // Salva no localStorage
+        localStorage.setItem('userCEP', cep);
+        localStorage.setItem('userLocation', foundLocation);
+      } else {
+        resultEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        errorEl.textContent = 'Preço não disponível para esta região.';
+      }
+    });
+    
+    // Enter para buscar
+    input.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        button.click();
+      }
+    });
+    
+    // Carrega CEP salvo
+    const savedCEP = localStorage.getItem('userCEP');
+    if (savedCEP) {
+      input.value = savedCEP;
+    }
+  });
+})();
+</script>
