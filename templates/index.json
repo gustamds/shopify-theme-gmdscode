@@ -36,10 +36,11 @@
         "button"
       ],
       "settings": {
+        "image": "shopify://shop_images/dragonspitz2_eab337be-6679-4329-b733-d703de18ce3f.jpg",
         "image_overlay_opacity": 40,
         "image_height": "large",
         "image_behavior": "none",
-        "desktop_content_position": "bottom-center",
+        "desktop_content_position": "bottom-right",
         "desktop_content_alignment": "center",
         "show_text_box": false,
         "color_scheme": "scheme-3",
